@@ -13,6 +13,9 @@ from .attribute import Attribute
 class Entity():
     """ A basic Entity Istance"""
 
+    def __init__(self, **kwargs):
+        pass
+
     @property
     def blueprint(self) -> Blueprint:
         """Return blueprint that this entity represents"""

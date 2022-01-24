@@ -15,7 +15,7 @@ shutil.rmtree(Path("dist"), ignore_errors=True)
 
 setup(
     name='dmtpy',
-    version='0.0.2',
+    version='0.0.3',
     author="SINTEF Ocean",
     description="Python runtime library for DMT",
     url="https://github.com/SINTEF/dmtpy",
