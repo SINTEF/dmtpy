@@ -6,27 +6,27 @@ import shutil
 here = Path(__file__).parent.resolve()
 
 # Get the long description from the README file
-long_description = (here / 'README.md').read_text(encoding='utf-8')
+long_description = (here / "README.md").read_text(encoding="utf-8")
 
 
-#Remove build and dist folders
+# Remove build and dist folders
 shutil.rmtree(Path("build"), ignore_errors=True)
 shutil.rmtree(Path("dist"), ignore_errors=True)
 
 setup(
-    name='dmtpy',
-    version='0.0.5',
+    name="dmtpy",
+    version="0.0.6",
     author="SINTEF Ocean",
     description="Python runtime library for DMT",
     url="https://github.com/SINTEF/dmtpy",
     long_description=long_description,
     long_description_content_type="text/markdown",
     package_dir={"": "src"},
-    packages= find_packages(where="src",exclude=["tests"]),
+    packages=find_packages(where="src", exclude=["tests"]),
     classifiers=[
-         "Programming Language :: Python :: 3",
-         "License :: OSI Approved :: MIT License",
-         "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
     ],
-    python_requires='>=3.8',
+    python_requires=">=3.8",
 )
