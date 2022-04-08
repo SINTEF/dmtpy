@@ -13,9 +13,11 @@ from .entity import Entity
 class DMTWriter:
     """Convert to DMT dictionary"""
 
-    def __init__(self):
+    def __init__(self, use_external_refs=False):
         self.uuids = dict()
-
+        self.use_external_refs=use_external_refs
+        self.external_refs: Dict[str,Entity] = dict()
+    
     def write(self, entity: Entity, filename, indent=0):
         """Write entity to file"""
         with open(filename, "w", encoding="utf-8") as file:
@@ -57,7 +59,14 @@ class DMTWriter:
                 reference: Entity = value
                 _id = self.uuids.get(reference, None)
                 if not _id:
-                    raise Exception("Id not set")
+                    if self.use_external_refs:
+                        _id = self.external_refs.get(reference, None)
+                        if not _id:
+                            _id = str(uuid.uuid4())
+                            self.external_refs[_id]=reference
+                        return {"_id": _id}
+                    else:
+                        raise Exception("Id not set")
                 return {"_id": _id}
             if attribute.has_dimensions():
                 values = [self.__as_dict(lvalue) for lvalue in value]

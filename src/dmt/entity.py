@@ -3,12 +3,13 @@
 from __future__ import annotations
 from enum import Enum
 
-from typing import Iterator, Sequence
+from typing import Iterator, Sequence, TypeVar
 
 from .blueprint import Blueprint
 from .dimension import Dimension
 from .attribute import Attribute
 
+E = TypeVar("E")
 
 class Entity():
     """ A basic Entity Istance"""
@@ -63,9 +64,10 @@ class Entity():
                     yield child
                     yield from child.all_content()
 
-    def copy(self) -> Entity:
+    def copy(self: E) -> E:
         from .dmt_reader import DMTReader
         from .dmt_writer import DMTWriter
-        entity_dict = DMTWriter().to_dict(self)
-        return DMTReader().from_dict(entity_dict)
+        writer = DMTWriter(use_external_refs=True)
+        entity_dict = writer.to_dict(self)
+        return DMTReader(writer.external_refs).from_dict(entity_dict)
 

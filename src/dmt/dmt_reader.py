@@ -24,9 +24,10 @@ class DMTReader():
             self.prop = prop
             self.uid = uid
 
-    def __init__(self):
+    def __init__(self, external_refs: Dict[str,Entity]=dict()):
         self.entities = dict()
         self.unresolved = list()
+        self.external_refs=external_refs
 
     def read(self, filename) -> Entity:
         """ Read entity from file """
@@ -122,10 +123,11 @@ class DMTReader():
             setattr(entity_instance,attribute.name, value)
 
     def __resolve(self, ref: Reference):
-        value = self.entities.get(ref.uid)
+        value = self.entities.get(ref.uid,self.external_refs.get(ref.uid,None))
         if value:
             self.__set_value(ref.entity,ref.prop,value)
             return True
+
         return False
 
     def __set_enum_value(self,entity: Entity, attribute: EnumAttribute,value: str):
