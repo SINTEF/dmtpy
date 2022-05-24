@@ -75,9 +75,16 @@ class DMTWriter:
                 return self.__as_dict(value)
         else:
             if attribute.is_primitive:
-                if self.__is_optional_default(attribute, value):
-                    return None
-                return value
+                if attribute.has_dimensions():
+                    try:
+                        # Assumes ndarray..
+                        return value.tolist()
+                    except AttributeError:
+                        return value
+                else:
+                    if self.__is_optional_default(attribute, value):
+                        return None
+                    return value
             else:
                 if attribute.is_enum:
                     enum: Enum = value
