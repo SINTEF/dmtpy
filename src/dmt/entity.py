@@ -69,5 +69,8 @@ class Entity():
         from .dmt_writer import DMTWriter
         writer = DMTWriter(use_external_refs=True)
         entity_dict = writer.to_dict(self)
-        return DMTReader(writer.external_refs).from_dict(entity_dict)
+        refs = dict(writer.external_refs)
+        for entity, uuid in writer.uuids.items():
+            refs[uuid]=entity
+        return DMTReader(refs).from_dict(entity_dict)
 
