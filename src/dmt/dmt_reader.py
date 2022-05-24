@@ -1,7 +1,6 @@
 """ Creates entities from Dicts """
 
 
-from copyreg import constructor
 import json
 from importlib import import_module
 from pyclbr import Function
@@ -31,7 +30,7 @@ class DMTReader():
 
     def read(self, filename) -> Entity:
         """ Read entity from file """
-        with open(filename, 'r',encoding="utf-8") as file:
+        with open(filename, 'r',encoding="utf-8", errors='replace') as file:
             res=json.load(file)
             return self.from_dict(res)
 
