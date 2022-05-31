@@ -15,7 +15,17 @@ class Entity():
     """ A basic Entity Istance"""
 
     def __init__(self, **kwargs):
-        pass
+        self.__description = None
+
+    @property
+    def description(self) -> str:
+        """"""
+        return self.__description
+
+    @description.setter
+    def description(self, value: str):
+        """Set description"""
+        self.__description = str(value)
 
     @property
     def blueprint(self) -> Blueprint:
