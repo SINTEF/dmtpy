@@ -23,10 +23,13 @@ class DMTReader():
             self.prop = prop
             self.uid = uid
 
-    def __init__(self, external_refs: Dict[str,Entity]=dict()):
+    def __init__(self, external_refs: Dict[str,Entity]=None):
         self.entities = dict()
         self.unresolved = list()
-        self.external_refs=external_refs
+        self.external_refs = dict()
+        if  external_refs:
+            self.external_refs=external_refs
+        self.datasource = None
 
     def read(self, filename) -> Entity:
         """ Read entity from file """
@@ -84,6 +87,8 @@ class DMTReader():
     def _resolve_type(self, atype: str) -> Function:
         pkg: any = None
         parts = atype.split("/")
+        if self.datasource:
+            parts.remove(self.datasource)
         if parts[0] == "":
             del parts[0]
         ename = parts.pop()
@@ -92,7 +97,7 @@ class DMTReader():
             pkg = import_module(package_path)
         except ModuleNotFoundError:
             raise Exception(f"Unable to load package {package_path}")
-    
+
         constructor = pkg.__dict__.get(ename)
         return constructor
 
@@ -131,7 +136,7 @@ class DMTReader():
 
     def __set_enum_value(self,entity: Entity, attribute: EnumAttribute,value: str):
         """ Convert from string to Enum"""
-        
+
         constructor = self._resolve_type(attribute.type)
         if not constructor:
             raise Exception(f"Unkown Enum type {attribute.type}")

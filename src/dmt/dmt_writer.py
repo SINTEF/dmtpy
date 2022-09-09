@@ -17,7 +17,8 @@ class DMTWriter:
         self.uuids = dict()
         self.use_external_refs=use_external_refs
         self.external_refs: Dict[str,Entity] = dict()
-    
+        self.datasource = None
+
     def write(self, entity: Entity, filename, indent=0):
         """Write entity to file"""
         with open(filename, "w", encoding="utf-8") as file:
@@ -40,7 +41,10 @@ class DMTWriter:
     def __as_dict(self, entity: Entity):
         """Convert to dictionary"""
         blueprint = entity.blueprint
-        ret = {"type": blueprint.get_path()}
+        stype = blueprint.get_path()
+        if self.datasource:
+            stype = self.datasource + "/" + stype
+        ret = {"type": stype}
         for attribute in blueprint.attributes:
             if entity.is_set(attribute):
                 value = self.__attribute_dict(entity, attribute)
