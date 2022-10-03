@@ -5,9 +5,9 @@ from enum import Enum
 
 from typing import Iterator, Sequence, TypeVar
 
-from .blueprint import Blueprint
-from .dimension import Dimension
-from .attribute import Attribute
+from dmt.blueprint import Blueprint
+from dmt.dimension import Dimension
+from dmt.attribute import Attribute
 
 E = TypeVar("E")
 
@@ -75,12 +75,11 @@ class Entity():
                     yield from child.all_content()
 
     def copy(self: E) -> E:
-        from .dmt_reader import DMTReader
-        from .dmt_writer import DMTWriter
+        from dmt.dmt_reader import DMTReader
+        from dmt.dmt_writer import DMTWriter
         writer = DMTWriter(use_external_refs=True)
         entity_dict = writer.to_dict(self)
         refs = dict(writer.external_refs)
         for entity, uuid in writer.uuids.items():
             refs[uuid]=entity
         return DMTReader(refs).from_dict(entity_dict)
-
