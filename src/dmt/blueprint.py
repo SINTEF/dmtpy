@@ -16,7 +16,7 @@ class Blueprint:
         self.package_path = package_path
         self.version = 1
         self.description = description
-        self.__attributes: OrderedDict[str,Attribute] = OrderedDict()
+        self.__attributes = OrderedDict()
         self.dimensions: List[Dimension] = list()
 
     def get_path(self):

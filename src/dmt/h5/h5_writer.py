@@ -1,76 +1,64 @@
-""" Export entites as SIMA objects"""
-
-
-from enum import Enum
-import json
-import os
+""" Export entites as h5"""
 from typing import Dict, Sequence
+from enum import Enum
 import uuid
-from .attribute import Attribute
-from .blueprint_attribute import BlueprintAttribute
-from .entity import Entity
+import h5py as h5
+from dmt.entity import Entity
+from dmt.attribute import Attribute
+from dmt.blueprint_attribute import BlueprintAttribute
 
 
-class DMTWriter:
-    """Convert to DMT dictionary"""
+class H5Writer:
+    """Write entities to H5 file"""
 
     def __init__(self, use_external_refs=False):
         self.uuids = dict()
-        self.use_external_refs=use_external_refs
-        self.external_refs: Dict[str,Entity] = dict()
+        self.use_external_refs = use_external_refs
+        self.external_refs: Dict[str, Entity] = dict()
         self.datasource = None
 
-    def write(self, entity: Entity, filename, indent=0):
-        """Write entity to file"""
-        if self.__is_h5(filename):
-            # pylint: disable=import-outside-toplevel
-            from .h5.h5_writer import H5Writer
-            H5Writer().write([entity], filename)
-        else:
-            with open(filename, "w", encoding="utf-8") as file:
-                res = self.to_dict(entity)
-                json.dump(res, file, indent=indent)
-
-    def __is_h5(self,filename):
-        _, extension = os.path.splitext(filename)
-        extension = extension.lower()
-        return extension=='.h5' or extension=='.hdf5'
-
-    def to_dicts(self, entities: Sequence[Entity]) -> Sequence[Dict]:
-        """Convert to DMT dictionaries"""
-
+    def write(self, entities: Sequence[Entity], filename):
+        """Write entities to h5 file"""
         # Make sure all referenced enitites has id's
         for entity in entities:
             self.__set_alls_ids(entity)
 
-        return [self.__as_dict(entity) for entity in entities]
+        with h5.File(filename, "w") as root:
+            for idx, entity in enumerate(entities):
+                self.__write_root(root, idx, entity)
 
-    def to_dict(self, entity: Entity) -> Dict:
-        """Convert to DMT dictionary"""
-        return self.to_dicts([entity])[0]
+    def __write_root(self, group: h5.Group, idx, entity: Entity) -> str:
+        try:
+            name = entity.name
+        except AttributeError:
+            name = str(idx)
+        grp = group.create_group(name)
+        self.__write_group(grp, entity)
+        return name
 
-    def __as_dict(self, entity: Entity):
+    def __write_group(self, group: h5.Group, entity: Entity):
         """Convert to dictionary"""
         blueprint = entity.blueprint
         stype = blueprint.get_path()
         if self.datasource:
             stype = self.datasource + "/" + stype
-        ret = {"type": stype}
-        for attribute in blueprint.attributes:
-            if entity.is_set(attribute):
-                value = self.__attribute_dict(entity, attribute)
-                if value is not None:
-                    ret[attribute.name] = value
+
+        group.attrs.create("type", stype)
         _id = self.uuids.get(entity, None)
         if _id:
-            ret["_id"] = _id
-        return ret
+            group.create_dataset("_id", data=_id)
 
-    def __attribute_dict(self, entity: Entity, attribute: Attribute):
+        for attribute in blueprint.attributes:
+            if entity.is_set(attribute):
+                self.__write_attribute(group, entity, attribute)
+
+    def __write_attribute(self, group: h5.Group, entity: Entity, attribute: Attribute):
         value = getattr(entity, attribute.name, None)
         if isinstance(attribute, BlueprintAttribute):
             if not attribute.contained:
                 # This is a cross reference
+                if attribute.has_dimensions():
+                    raise Exception("Cross reference array not supported yet")
                 reference: Entity = value
                 _id = self.uuids.get(reference, None)
                 if not _id:
@@ -78,33 +66,35 @@ class DMTWriter:
                         _id = self.external_refs.get(reference, None)
                         if not _id:
                             _id = str(uuid.uuid4())
-                            self.external_refs[_id]=reference
-                        return {"_id": _id}
+                            self.external_refs[_id] = reference
                     else:
                         raise Exception("Id not set")
-                return {"_id": _id}
-            if attribute.has_dimensions():
-                values = [self.__as_dict(lvalue) for lvalue in value]
-                return values
+                child_group=group.create_group(attribute.name)
+                child_group.create_dataset("_id", data = _id)
+            elif attribute.has_dimensions():
+                children_group=group.create_group(attribute.name)
+                order = []
+                for idx, entity in enumerate(value):
+                    name=self.__write_root(children_group, idx, entity)
+                    order.append(name)
+                if len(order)>1:
+                    children_group.attrs.create("order", order)
             else:
-                return self.__as_dict(value)
+                child_group=group.create_group(attribute.name)
+                self.__write_group(child_group, value)
+
         else:
             if attribute.is_primitive:
                 if attribute.has_dimensions():
-                    try:
-                        # Assumes ndarray..
-                        return value.tolist()
-                    except AttributeError:
-                        return value
+                    group.create_dataset(attribute.name, data = value)
                 else:
                     if self.__is_optional_default(attribute, value):
                         return None
-                    return value
+                    group.create_dataset(attribute.name, data = value)
             else:
                 if attribute.is_enum:
                     enum: Enum = value
-                    return enum.name
-                return self.__as_dict(value)
+                    group.create_dataset(attribute.name, data = enum.name)
 
     def __set_alls_ids(self, entity: Entity):
         for child in entity.all_content():

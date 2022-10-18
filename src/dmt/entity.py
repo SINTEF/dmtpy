@@ -3,7 +3,7 @@
 from __future__ import annotations
 from enum import Enum
 
-from typing import Iterator, Sequence, TypeVar
+from typing import Iterator, Sequence, TypeVar,Dict
 
 from dmt.blueprint import Blueprint
 from dmt.dimension import Dimension
@@ -14,12 +14,15 @@ E = TypeVar("E")
 class Entity():
     """ A basic Entity Istance"""
 
-    def __init__(self, **kwargs):
-        self.__description = None
+    def __init__(self, description="", **kwargs):
+        self.description = description
+        for key, value in kwargs.items():
+            if not isinstance(value, Dict):
+                setattr(self, key, value)
 
     @property
     def description(self) -> str:
-        """"""
+        """Get description"""
         return self.__description
 
     @description.setter
@@ -33,15 +36,16 @@ class Entity():
         raise Exception("Should have been overridden")
 
     def get_dimension(self, dim: Dimension) -> int:
+        """Get the dimension"""
         return getattr(self,dim.name,0)
 
     def is_set(self, prop: Attribute) -> bool:
+        """Is the attribute set?"""
         value=getattr(self,prop.name,None)
         if value is None:
             return False
         if prop.is_string():
             if isinstance(value,Enum):
-                #FIXME
                 return True
             return len(value) > 0
         if prop.has_dimensions():
@@ -49,6 +53,7 @@ class Entity():
         return True
 
     def content(self) -> Iterator[Entity]:
+        """Get direct children contained in this entity"""
         for p in self.blueprint.blueprint_attributes():
             if p.contained and self.is_set(p):
                 value = getattr(self, p.name, None)
@@ -61,6 +66,7 @@ class Entity():
                     yield child
 
     def all_content(self) -> Iterator[Entity]:
+        """Get all children contained in this entity"""
         for p in self.blueprint.blueprint_attributes():
             if p.contained and self.is_set(p):
                 value = getattr(self, p.name, None)
@@ -75,6 +81,7 @@ class Entity():
                     yield from child.all_content()
 
     def copy(self: E) -> E:
+        """"Copy the entity"""
         from dmt.dmt_reader import DMTReader
         from dmt.dmt_writer import DMTWriter
         writer = DMTWriter(use_external_refs=True)
