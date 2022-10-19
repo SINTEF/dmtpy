@@ -15,6 +15,7 @@ class SomeEntityBlueprint(Blueprint):
         self.add_attribute(Attribute("myint", "integer", "", optional=False, default=1))
         self.add_attribute(Attribute("myArray", "number", "",Dimension("size")))
         self.add_attribute(BlueprintAttribute("children", self.get_path(), "",True,Dimension("size")))
+        self.add_attribute(Attribute("mystrings", "string", "", Dimension("size")))
         self.add_attribute(BlueprintAttribute("child", self.get_path(), "",True))
         self.add_attribute(EnumAttribute("myEnum","tests/SomeEnum",""))
         self.add_attribute(BlueprintAttribute("ref", self.get_path(), "",False))

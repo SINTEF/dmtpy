@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from numpy import asarray
+
 from dmt.h5.h5_reader import H5Reader
 from dmt.h5.h5_writer import H5Writer
 
@@ -12,7 +14,7 @@ def test_write_h5(tmpdir):
     entity = SomeEntity()
     entity.myint = 2
     entity.myEnum = SomeEnum.OPTION2
-    entity.myArray = [1.0, 2.0]
+    entity.myArray = asarray([1.0, 2.0])
 
     # Create names such that they are in reverse alphabetical order
     child1 = SomeEntity()
@@ -22,13 +24,14 @@ def test_write_h5(tmpdir):
     child2 = SomeEntity()
     child2.name = "a"
     child2.myint = 4
-    child2.myArray = [3.0, 4.0]
+    child2.myArray = asarray([3.0, 4.0])
     child2.ref = child1
 
     entity.children = [child1, child2]
 
     child3 = SomeEntity()
     child3.myint = 4
+    child3.mystrings = asarray(["a","b"])
     entity.child = child3
 
     file = Path(tmpdir) / "test.h5"

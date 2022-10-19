@@ -70,7 +70,10 @@ class H5Reader:
             else:
                 value = node[()]
                 if attribute.is_string():
-                    setattr(entity_instance,name, value.decode())
+                    if attribute.has_dimensions():
+                        setattr(entity_instance,name, value.astype(str))
+                    else:
+                        setattr(entity_instance,name, value.decode())
                 else:
                     setattr(entity_instance,name, value)
 

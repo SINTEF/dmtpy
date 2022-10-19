@@ -86,6 +86,9 @@ class H5Writer:
         else:
             if attribute.is_primitive:
                 if attribute.has_dimensions():
+                    if attribute.is_string():
+                        # HDF5 will does not handle strings properly
+                        value = value.astype("S")
                     group.create_dataset(attribute.name, data = value)
                 else:
                     if self.__is_optional_default(attribute, value):
