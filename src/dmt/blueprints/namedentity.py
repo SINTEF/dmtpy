@@ -7,4 +7,4 @@ class NamedEntityBlueprint(EntityBlueprint):
 
     def __init__(self, name="NamedEntity", package_path="dmt", description=""):
         super().__init__(name,package_path,description)
-        self.attributes.append(Attribute("name","string","",default=""))
+        self.add_attribute(Attribute("name","string","",default=""))

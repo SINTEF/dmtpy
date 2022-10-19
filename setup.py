@@ -1,7 +1,6 @@
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages
 from pathlib import Path
 import shutil
+from setuptools import setup, find_packages
 
 here = Path(__file__).parent.resolve()
 
@@ -15,14 +14,18 @@ shutil.rmtree(Path("dist"), ignore_errors=True)
 
 setup(
     name="dmtpy",
-    version="0.2.0",
+    version="0.3.0",
     author="SINTEF Ocean",
-    description="Python runtime library for DMT",
+    description="Python runtime library for SIMOS based DMT models",
     url="https://github.com/SINTEF/dmtpy",
     long_description=long_description,
     long_description_content_type="text/markdown",
     package_dir={"": "src"},
     packages=find_packages(where="src", exclude=["tests"]),
+    install_requires=[
+        "h5py",
+        "numpy"
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

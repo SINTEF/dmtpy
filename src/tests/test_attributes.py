@@ -18,7 +18,7 @@ def test_write_attribute_when_default():
     assert attribute.name is "myint"
     assert attribute.is_primitive
     blueprint = Blueprint(name="BP", package_path="")
-    blueprint.attributes.append(attribute)
+    blueprint.add_attribute(attribute)
     entity = TestEntity(blueprint)
     entity.myint = 2
     writer = DMTWriter()

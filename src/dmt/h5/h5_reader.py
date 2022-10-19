@@ -1,19 +1,16 @@
-""" Creates entities from Dicts """
-
-
-import json
-import os
+""" Export entites as h5"""
+from typing import Sequence,Dict,Callable
 from importlib import import_module
-from typing import Dict, Sequence, Callable,Union
+import h5py as h5
+from dmt.dmt_reader import DMTReader
+from dmt.entity import Entity
+from dmt.attribute import Attribute
+from dmt.blueprint_attribute import BlueprintAttribute
+from dmt.enum_attribute import EnumAttribute
+from collections import OrderedDict
 
-from .attribute import Attribute
-from .enum_attribute import EnumAttribute
-from .blueprint_attribute import BlueprintAttribute
-from .entity import Entity
-
-
-class DMTReader():
-    """ Creates entities from Dicts """
+class H5Reader:
+    """Read entities from H5 file"""
 
     class Reference:
         """Holds a reference until it can be resolved"""
@@ -31,31 +28,14 @@ class DMTReader():
             self.external_refs=external_refs
         self.datasource = None
 
-    def read(self, filename) -> Union[Entity,Sequence[Entity]]:
-        """ Read entity from file """
-        if self.__is_h5(filename):
-            # pylint: disable=import-outside-toplevel
-            from .h5.h5_reader import H5Reader
-            return H5Reader().read(filename)
-        #FIXME: Handle several root entities
-        with open(filename, 'r',encoding="utf-8", errors='replace') as file:
-            res=json.load(file)
-            return self.from_dict(res)
 
-    def __is_h5(self,filename):
-        _, extension = os.path.splitext(filename)
-        extension = extension.lower()
-        return extension=='.h5' or extension=='.hdf5'
+    def read(self,filename) -> Sequence[Entity]:
+        """Write entities to h5 file"""
+        entities = []
+        with h5.File(filename, "r") as root:
+            for group in root.values():
+                entities.append(self.__read_group(group))
 
-    def from_dict(self,ent_dict: Dict) -> Entity:
-        """ Create entity from Dict """
-        entity=self.__from_dict(ent_dict)
-        self.__resolve_all()
-        return entity
-
-    def from_dicts(self,ent_dicts: Sequence[Dict]) -> Sequence[Entity]:
-        """ Create entity from Dict """
-        entities = [self.__from_dict(e) for e in ent_dicts]
         self.__resolve_all()
         return entities
 
@@ -65,31 +45,34 @@ class DMTReader():
                 raise Exception(f"Unresolved reference: {ref}")
 
 
-    def __from_dict(self,ent_dict: Dict) -> Entity:
+    def __read_group(self,group: h5.Group) -> Entity:
         """ Read entities from Dict """
-        entity_type: str=ent_dict["type"]
+        entity_type: str=group.attrs["type"]
         constructor = self._resolve_type(entity_type)
         if not constructor:
             raise Exception(f"Unkown entity type {entity_type}")
         entity_instance: Entity = constructor()
         blueprint = entity_instance.blueprint
-        for key, value in ent_dict.items():
-            if key == "_id":
-                uid = value
+        for name, node in group.items():
+            if name == "_id":
+                uid = node[()].decode()
                 self.entities[uid] = entity_instance
                 continue
-            if key == "type":
-                continue
-            attribute = blueprint.get_attribute(key)
+            attribute = blueprint.get_attribute(name)
             if not attribute:
                 #FIXME
                 continue
             if isinstance(attribute, BlueprintAttribute):
-                self.__set_blueprint_value(entity_instance,attribute,value)
+                self.__set_blueprint_value(entity_instance,attribute,node)
             elif attribute.is_enum:
+                value = node[()].decode()
                 self.__set_enum_value(entity_instance,attribute,value)
             else:
-                setattr(entity_instance,key, value)
+                value = node[()]
+                if attribute.is_string():
+                    setattr(entity_instance,name, value.decode())
+                else:
+                    setattr(entity_instance,name, value)
 
         return entity_instance
 
@@ -110,35 +93,42 @@ class DMTReader():
         constructor = pkg.__dict__.get(ename)
         return constructor
 
-    def __set_blueprint_value(self,entity_instance: Entity, attribute: EnumAttribute,value):
+    def __set_blueprint_value(self,entity_instance: Entity, attribute: BlueprintAttribute,value):
         if attribute.contained:
             self.__set_value(entity_instance,attribute,value)
         else:
             self.__set_reference(entity_instance,attribute,value)
 
-    def __set_reference(self,entity_instance: Entity,prop: Attribute,value):
-        if isinstance(value, Dict):
-            uid=value["_id"]
-            ref = self.Reference(entity_instance,prop,uid)
-            if not self.__resolve(ref):
-                self.unresolved.append(ref)
+    def __set_reference(self,entity_instance: Entity,prop: Attribute,group: h5.Group):
+        uid = group.get("_id")[()].decode()
+        ref = self.Reference(entity_instance,prop,uid)
+        if not self.__resolve(ref):
+            self.unresolved.append(ref)
         return
 
     def __set_value(self,entity_instance: Entity, attribute: BlueprintAttribute,value):
-        if isinstance(value, Sequence):
-            children = [self.__from_dict(v) for v in value]
+        if attribute.has_dimensions():
+            root: h5.Group = value
+            od = OrderedDict()
+            children = []
+            for name, v in root.items():
+                od[name] = self.__read_group(v)
+
+            order = root.attrs.get("order")
+            if order is not None:
+                sorder = order[()]
+                for name in sorder:
+                    children.append(od[name])
+            else:
+                children = od.values()
             setattr(entity_instance,attribute.name, children)
-        elif isinstance(value, Dict):
-            child=self.__from_dict(value)
-            if child:
-                setattr(entity_instance,attribute.name, child)
         else:
-            setattr(entity_instance,attribute.name, value)
+            setattr(entity_instance,attribute.name, self.__read_group(value) )
 
     def __resolve(self, ref: Reference):
         value = self.entities.get(ref.uid,self.external_refs.get(ref.uid,None))
         if value:
-            self.__set_value(ref.entity,ref.prop,value)
+            setattr(ref.entity,ref.prop.name, value )
             return True
 
         return False
