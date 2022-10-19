@@ -17,7 +17,7 @@ setup(
     name="dmtpy",
     version="0.2.0",
     author="SINTEF Ocean",
-    description="Python runtime library for DMT",
+    description="Python runtime library for SIMOS based DMT models",
     url="https://github.com/SINTEF/dmtpy",
     long_description=long_description,
     long_description_content_type="text/markdown",

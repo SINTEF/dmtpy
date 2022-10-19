@@ -1,7 +1,8 @@
 """
 Blueprint with attributes
 """
-from typing import Iterator, List
+from collections import OrderedDict
+from typing import Iterator, List, Tuple
 from .blueprint_attribute import BlueprintAttribute
 from .dimension import Dimension
 from .attribute import Attribute
@@ -15,12 +16,21 @@ class Blueprint:
         self.package_path = package_path
         self.version = 1
         self.description = description
-        self.attributes: List[Attribute] = list()
+        self.__attributes: OrderedDict[str,Attribute] = OrderedDict()
         self.dimensions: List[Dimension] = list()
 
     def get_path(self):
         """Full path to this type"""
         return self.package_path + "/" + self.name
+
+    def add_attribute(self, attribute: Attribute):
+        """Add the attribute to the blueprint"""
+        self.__attributes[attribute.name]=attribute
+
+    @property
+    def attributes(self) -> Tuple[Attribute]:
+        """All attributes"""
+        return tuple(self.__attributes.values())
 
     def get_attribute(self, name: str) -> Attribute:
         """Get attribute of given name"""
