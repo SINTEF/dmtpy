@@ -23,10 +23,11 @@ class DMTReader():
             self.prop = prop
             self.uid = uid
 
-    def __init__(self, external_refs: Dict[str,Entity]=None):
-        self.entities = dict()
-        self.unresolved = list()
-        self.external_refs = dict()
+    def __init__(self, external_refs: Dict[str,Entity]=None, root_package: str=None):
+        self.root_package: str = root_package
+        self.entities = {}
+        self.unresolved = []
+        self.external_refs = {}
         if  external_refs:
             self.external_refs=external_refs
         self.datasource = None
@@ -36,7 +37,7 @@ class DMTReader():
         if self.__is_h5(filename):
             # pylint: disable=import-outside-toplevel
             from .h5.h5_reader import H5Reader
-            return H5Reader().read(filename)
+            return H5Reader(root_package=self.root_package).read(filename)
         #FIXME: Handle several root entities
         with open(filename, 'r',encoding="utf-8", errors='replace') as file:
             res=json.load(file)
@@ -102,6 +103,8 @@ class DMTReader():
             del parts[0]
         ename = parts.pop()
         package_path = ".".join(parts)
+        if self.root_package:
+            package_path = self.root_package + "." + package_path
         try:
             pkg = import_module(package_path)
         except ModuleNotFoundError as error:
