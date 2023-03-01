@@ -123,7 +123,7 @@ class H5Reader:
                 for name in sorder:
                     children.append(od[name])
             else:
-                children = od.values()
+                children = list(od.values())
             setattr(entity_instance,attribute.name, children)
         else:
             setattr(entity_instance,attribute.name, self.__read_group(value) )
