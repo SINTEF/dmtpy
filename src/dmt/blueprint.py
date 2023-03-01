@@ -17,7 +17,7 @@ class Blueprint:
         self.version = 1
         self.description = description
         self.__attributes = OrderedDict()
-        self.dimensions: List[Dimension] = list()
+        self.dimensions: List[Dimension] = []
 
     def get_path(self):
         """Full path to this type"""

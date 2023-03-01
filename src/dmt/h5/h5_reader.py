@@ -1,13 +1,15 @@
 """ Export entites as h5"""
-from typing import Sequence,Dict,Callable
+from collections import OrderedDict
 from importlib import import_module
+from typing import Callable, Dict, Sequence
+
 import h5py as h5
-from dmt.dmt_reader import DMTReader
-from dmt.entity import Entity
+
 from dmt.attribute import Attribute
 from dmt.blueprint_attribute import BlueprintAttribute
+from dmt.entity import Entity
 from dmt.enum_attribute import EnumAttribute
-from collections import OrderedDict
+
 
 class H5Reader:
     """Read entities from H5 file"""
@@ -20,7 +22,8 @@ class H5Reader:
             self.prop = prop
             self.uid = uid
 
-    def __init__(self, external_refs: Dict[str,Entity]=None):
+    def __init__(self, external_refs: Dict[str,Entity]=None, root_package: str = None):
+        self.root_package: str = root_package
         self.entities = dict()
         self.unresolved = list()
         self.external_refs = dict()
@@ -88,6 +91,8 @@ class H5Reader:
             del parts[0]
         ename = parts.pop()
         package_path = ".".join(parts)
+        if self.root_package:
+            package_path = self.root_package + "." + package_path
         try:
             pkg = import_module(package_path)
         except ModuleNotFoundError as error:
