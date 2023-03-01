@@ -2,7 +2,7 @@ import json
 from dmt.attribute import Attribute
 from dmt.blueprint import Blueprint
 from dmt.dmt_writer import DMTWriter
-from tests.test_entity import TestEntity
+from tests.entity import PyTestEntity
 
 
 def test_attribute_creation():
@@ -19,7 +19,7 @@ def test_write_attribute_when_default():
     assert attribute.is_primitive
     blueprint = Blueprint(name="BP", package_path="")
     blueprint.add_attribute(attribute)
-    entity = TestEntity(blueprint)
+    entity = PyTestEntity(blueprint)
     entity.myint = 2
     writer = DMTWriter()
     res = writer.to_dict(entity)
