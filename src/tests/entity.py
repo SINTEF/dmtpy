@@ -3,7 +3,7 @@ from dmt.blueprint import Blueprint
 from dmt.entity import Entity
 
 
-class TestEntity(Entity):
+class PyTestEntity(Entity):
     """Enables dynamic entities"""
 
     def __init__(self, blueprint: Blueprint):
