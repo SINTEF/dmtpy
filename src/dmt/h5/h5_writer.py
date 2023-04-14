@@ -30,6 +30,8 @@ class H5Writer:
     def __write_root(self, group: h5.Group, idx, entity: Entity) -> str:
         try:
             name = entity.name
+            if not name:
+                name = str(idx)
         except AttributeError:
             name = str(idx)
         grp = group.create_group(name)
