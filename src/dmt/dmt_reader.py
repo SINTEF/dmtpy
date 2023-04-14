@@ -63,7 +63,7 @@ class DMTReader():
     def __resolve_all(self):
         for ref in self.unresolved:
             if not self.__resolve(ref):
-                raise Exception(f"Unresolved reference: {ref}")
+                raise ValueError(f"Unresolved reference: {ref}")
 
 
     def __from_dict(self,ent_dict: Dict) -> Entity:
@@ -71,7 +71,7 @@ class DMTReader():
         entity_type: str=ent_dict["type"]
         constructor = self._resolve_type(entity_type)
         if not constructor:
-            raise Exception(f"Unkown entity type {entity_type}")
+            raise ValueError(f"Unkown entity type {entity_type}")
         entity_instance: Entity = constructor()
         blueprint = entity_instance.blueprint
         for key, value in ent_dict.items():
@@ -108,7 +108,7 @@ class DMTReader():
         try:
             pkg = import_module(package_path)
         except ModuleNotFoundError as error:
-            raise Exception(f"Unable to load package {package_path}") from error
+            raise ModuleNotFoundError(f"Unable to load package {package_path}") from error
 
         constructor = pkg.__dict__.get(ename)
         return constructor
@@ -151,6 +151,6 @@ class DMTReader():
 
         constructor = self._resolve_type(attribute.type)
         if not constructor:
-            raise Exception(f"Unkown Enum type {attribute.type}")
+            raise ValueError(f"Unkown Enum type {attribute.type}")
         evalue = constructor[value]
         setattr(entity,attribute.name, evalue)

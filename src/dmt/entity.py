@@ -9,6 +9,7 @@ from dmt.blueprint import Blueprint
 from dmt.dimension import Dimension
 from dmt.attribute import Attribute
 
+
 E = TypeVar("E")
 
 class Entity():
@@ -51,6 +52,14 @@ class Entity():
         if prop.has_dimensions():
             return len(value)>0
         return True
+    
+    def set(self, prop: Attribute, value: any):
+        """Set the attribute"""
+        setattr(self,prop.name,value)
+    
+    def get(self, prop: Attribute) -> any:
+        """Get the attribute"""
+        return getattr(self,prop.name,None)
 
     def content(self) -> Iterator[Entity]:
         """Get direct children contained in this entity"""
@@ -80,13 +89,7 @@ class Entity():
                     yield child
                     yield from child.all_content()
 
-    def copy(self: E) -> E:
+    def copy(self: E,keep_uncontained_references=False) -> E:
         """"Copy the entity"""
-        from dmt.dmt_reader import DMTReader
-        from dmt.dmt_writer import DMTWriter
-        writer = DMTWriter(use_external_refs=True)
-        entity_dict = writer.to_dict(self)
-        refs = dict(writer.external_refs)
-        for entity, uuid in writer.uuids.items():
-            refs[uuid]=entity
-        return DMTReader(refs).from_dict(entity_dict)
+        from .copier import Copier
+        return Copier(keep_uncontained_references).copy(self)
