@@ -1,3 +1,8 @@
+"""
+Tests for the copy functionality of the copier.
+If keep_uncontained_references is true, references to entities that are not contained in the entity will be kept. If false, they will be removed.
+Default is true.
+"""
 from dmt.copier import Copier
 from tests.some_entity import SomeEntity
 from tests.some_enum import SomeEnum
@@ -81,7 +86,7 @@ def test_single_uncontained_reference():
     # We just reference it without containing it
     e1.ref = e2
 
-    e3 = e1.copy()
+    e3 = e1.copy(False)
     # The reference should be gone, since it is not contained
     assert e3.ref is None
 
@@ -117,12 +122,12 @@ def test_multiple_uncontained_reference():
     
     e1.refs = [e2,e3]
 
-    e4 = e1.copy()
+    e4 = e1.copy(keep_uncontained_references=False)
     # The references should be gone, since they are not contained
     assert e4.refs == []
 
     # Try once more with a copier
-    copier = Copier()
+    copier = Copier(keep_uncontained_references=False)
     # First we only include one of the references
     e4,e5 = copier.copy_all([e1,e2])
     assert e4.refs == [e5]

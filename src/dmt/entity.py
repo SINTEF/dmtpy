@@ -89,7 +89,7 @@ class Entity():
                     yield child
                     yield from child.all_content()
 
-    def copy(self: E,keep_uncontained_references=False) -> E:
+    def copy(self: E,keep_uncontained_references=True) -> E:
         """"Copy the entity"""
         from .copier import Copier
         return Copier(keep_uncontained_references).copy(self)

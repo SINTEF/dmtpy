@@ -5,7 +5,7 @@ from .entity import Entity
 
 class Copier:
 
-    def __init__(self,keep_uncontained_references=False):
+    def __init__(self,keep_uncontained_references=True):
         """Create a copier
         keep_uncontained_references: If True, uncontained references will be copied as well, otherwise they will be removed
         """
