@@ -58,7 +58,10 @@ class DMTWriter:
         ret = {"type": stype}
         for attribute in blueprint.attributes:
             if entity.is_set(attribute):
-                value = self.__attribute_dict(entity, attribute)
+                try:
+                    value = self.__attribute_dict(entity, attribute)
+                except Exception as err:
+                    raise ValueError(f"Failed to convert {attribute.name}",err) from err
                 if value is not None:
                     ret[attribute.name] = value
         _id = self.uuids.get(entity, None)
@@ -81,7 +84,7 @@ class DMTWriter:
                             self.external_refs[_id]=reference
                         return {"_id": _id}
                     else:
-                        raise Exception("Id not set")
+                        raise KeyError("Id not set")
                 return {"_id": _id}
             if attribute.has_dimensions():
                 values = [self.__as_dict(lvalue) for lvalue in value]
