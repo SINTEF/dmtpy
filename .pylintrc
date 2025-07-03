@@ -1,1 +1,2 @@
-disable=missing-function-docstring,
+[MESSAGES CONTROL]
+disable=missing-function-docstring,missing-module-docstring,missing-class-docstring

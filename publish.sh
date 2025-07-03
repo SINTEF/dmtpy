@@ -1,6 +1,10 @@
 set -e
 
-python setup.py clean --all sdist bdist_wheel
+# Clean previous builds
+rm -rf dist/ build/
+
+# Build with uv
+uv build
 
 if $PUBLISH_LIB; then
     python -m twine upload dist/* --config-file .pypirc
