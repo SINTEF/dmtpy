@@ -18,10 +18,11 @@ class DMTReader():
     class Reference:
         """Holds a reference until it can be resolved"""
 
-        def __init__(self,entity, prop: Attribute,uid: str):
+        def __init__(self,entity, prop: Attribute,uid: str, index: int=None):
             self.entity = entity
             self.prop = prop
             self.uid = uid
+            self.index = index
 
     def __init__(self, external_refs: Dict[str,Entity]=None, root_package: str=None):
         self.root_package: str = root_package
@@ -121,11 +122,16 @@ class DMTReader():
 
     def __set_reference(self,entity_instance: Entity,prop: Attribute,value):
         if isinstance(value, Dict):
-            uid=value["_id"]
-            ref = self.Reference(entity_instance,prop,uid)
-            if not self.__resolve(ref):
-                self.unresolved.append(ref)
-        return
+            self.__add_reference(self.Reference(entity_instance,prop,value["_id"]))
+        elif isinstance(value, Sequence):
+            # Placeholders keep the order when some references resolve only in __resolve_all
+            setattr(entity_instance,prop.name, [None]*len(value))
+            for index, item in enumerate(value):
+                self.__add_reference(self.Reference(entity_instance,prop,item["_id"],index))
+
+    def __add_reference(self, ref: Reference):
+        if not self.__resolve(ref):
+            self.unresolved.append(ref)
 
     def __set_value(self,entity_instance: Entity, attribute: BlueprintAttribute,value):
         if isinstance(value, Sequence):
@@ -141,7 +147,10 @@ class DMTReader():
     def __resolve(self, ref: Reference):
         value = self.entities.get(ref.uid,self.external_refs.get(ref.uid,None))
         if value:
-            self.__set_value(ref.entity,ref.prop,value)
+            if ref.index is None:
+                self.__set_value(ref.entity,ref.prop,value)
+            else:
+                getattr(ref.entity,ref.prop.name)[ref.index] = value
             return True
 
         return False
