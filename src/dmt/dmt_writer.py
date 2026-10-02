@@ -74,18 +74,9 @@ class DMTWriter:
         if isinstance(attribute, BlueprintAttribute):
             if not attribute.contained:
                 # This is a cross reference
-                reference: Entity = value
-                _id = self.uuids.get(reference, None)
-                if not _id:
-                    if self.use_external_refs:
-                        _id = self.external_refs.get(reference, None)
-                        if not _id:
-                            _id = str(uuid.uuid4())
-                            self.external_refs[_id]=reference
-                        return {"_id": _id}
-                    else:
-                        raise KeyError("Id not set")
-                return {"_id": _id}
+                if attribute.has_dimensions():
+                    return [{"_id": self.__reference_id(reference)} for reference in value]
+                return {"_id": self.__reference_id(value)}
             if attribute.has_dimensions():
                 values = [self.__as_dict(lvalue) for lvalue in value]
                 return values
@@ -108,6 +99,18 @@ class DMTWriter:
                     enum: Enum = value
                     return enum.name
                 return self.__as_dict(value)
+
+    def __reference_id(self, reference: Entity) -> str:
+        _id = self.uuids.get(reference, None)
+        if not _id:
+            if self.use_external_refs:
+                _id = self.external_refs.get(reference, None)
+                if not _id:
+                    _id = str(uuid.uuid4())
+                    self.external_refs[_id]=reference
+            else:
+                raise KeyError("Id not set")
+        return _id
 
     def __set_alls_ids(self, entity: Entity):
         for child in entity.all_content():

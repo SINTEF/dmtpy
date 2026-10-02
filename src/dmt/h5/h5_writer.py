@@ -60,19 +60,11 @@ class H5Writer:
             if not attribute.contained:
                 # This is a cross reference
                 if attribute.has_dimensions():
-                    raise Exception("Cross reference array not supported yet")
-                reference: Entity = value
-                _id = self.uuids.get(reference, None)
-                if not _id:
-                    if self.use_external_refs:
-                        _id = self.external_refs.get(reference, None)
-                        if not _id:
-                            _id = str(uuid.uuid4())
-                            self.external_refs[_id] = reference
-                    else:
-                        raise Exception("Id not set")
+                    ids = [self.__reference_id(reference, attribute).encode() for reference in value]
+                else:
+                    ids = self.__reference_id(value, attribute)
                 child_group=group.create_group(attribute.name)
-                child_group.create_dataset("_id", data = _id)
+                child_group.create_dataset("_id", data = ids)
             elif attribute.has_dimensions():
                 children_group=group.create_group(attribute.name)
                 order = []
@@ -100,6 +92,18 @@ class H5Writer:
                 if attribute.is_enum:
                     enum: Enum = value
                     group.create_dataset(attribute.name, data = enum.name)
+
+    def __reference_id(self, reference: Entity, attribute: Attribute) -> str:
+        _id = self.uuids.get(reference, None)
+        if not _id:
+            if self.use_external_refs:
+                _id = self.external_refs.get(reference, None)
+                if not _id:
+                    _id = str(uuid.uuid4())
+                    self.external_refs[_id] = reference
+            else:
+                raise Exception(f"Id not set for {attribute.name}")
+        return _id
 
     def __set_alls_ids(self, entity: Entity):
         for child in entity.all_content():

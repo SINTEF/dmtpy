@@ -17,10 +17,11 @@ class H5Reader:
     class Reference:
         """Holds a reference until it can be resolved"""
 
-        def __init__(self,entity, prop: Attribute,uid: str):
+        def __init__(self,entity, prop: Attribute,uid: str, index: int=None):
             self.entity = entity
             self.prop = prop
             self.uid = uid
+            self.index = index
 
     def __init__(self, external_refs: Dict[str,Entity]=None, root_package: str = None):
         self.root_package: str = root_package
@@ -108,11 +109,18 @@ class H5Reader:
             self.__set_reference(entity_instance,attribute,value)
 
     def __set_reference(self,entity_instance: Entity,prop: Attribute,group: h5.Group):
-        uid = group.get("_id")[()].decode()
-        ref = self.Reference(entity_instance,prop,uid)
+        ids = group.get("_id")[()]
+        if prop.has_dimensions():
+            # Placeholders keep the order when some references resolve only in __resolve_all
+            setattr(entity_instance,prop.name, [None]*len(ids))
+            for index, uid in enumerate(ids):
+                self.__add_reference(self.Reference(entity_instance,prop,uid.decode(),index))
+        else:
+            self.__add_reference(self.Reference(entity_instance,prop,ids.decode()))
+
+    def __add_reference(self, ref: Reference):
         if not self.__resolve(ref):
             self.unresolved.append(ref)
-        return
 
     def __set_value(self,entity_instance: Entity, attribute: BlueprintAttribute,value):
         if attribute.has_dimensions():
@@ -136,7 +144,10 @@ class H5Reader:
     def __resolve(self, ref: Reference):
         value = self.entities.get(ref.uid,self.external_refs.get(ref.uid,None))
         if value:
-            setattr(ref.entity,ref.prop.name, value )
+            if ref.index is None:
+                setattr(ref.entity,ref.prop.name, value )
+            else:
+                getattr(ref.entity,ref.prop.name)[ref.index] = value
             return True
 
         return False
